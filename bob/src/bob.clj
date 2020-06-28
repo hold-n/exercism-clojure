@@ -1,22 +1,19 @@
 (ns bob
   (:require [clojure.string :as str]))
 
-(defn- question? [^String s]
-  (-> s
-      str/trim
-      (str/ends-with? "?")))
+(defn- question? [s]
+  (str/ends-with? (str/trimr s) "?"))
 
-(defn- yelling? [^String s]
-  (and
-   (every? #(or (Character/isUpperCase %) (not (Character/isLetter %))) s)
-   (some #(Character/isLetter %) s)))
+(defn yelling? [s]
+  (and (not= s (str/lower-case s))
+       (= s (str/upper-case s))))
 
-(defn response-for [^String s]
-  (let [is-question (question? s)
-        is-yelling (yelling? s)]
+(defn response-for [s]
+  (let [q (question? s)
+        y (yelling? s)]
     (cond
       (str/blank? s) "Fine. Be that way!"
-      (and is-question is-yelling) "Calm down, I know what I'm doing!"
-      is-question "Sure."
-      is-yelling "Whoa, chill out!"
+      (and q y) "Calm down, I know what I'm doing!"
+      q "Sure."
+      y "Whoa, chill out!"
       :else "Whatever.")))
