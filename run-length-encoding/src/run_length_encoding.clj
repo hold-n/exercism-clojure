@@ -1,44 +1,23 @@
-(ns run-length-encoding)
-
-(defn- flush-encoded [^StringBuilder sb cnt chr]
-  (when (pos? cnt)
-    (when (not= 1 cnt)
-      (.append sb cnt))
-    (.append sb chr)))
+(ns run-length-encoding
+  (:require [clojure.string :as str]))
 
 (defn run-length-encode
   "encodes a string with run-length-encoding"
   [plain-text]
   (let [sb (StringBuilder.)]
-    (loop [chars (seq plain-text)
-           chr (first chars)
-           cnt 0]
-      (cond
-        (empty? chars) (flush-encoded sb cnt chr)
-        (= chr (first chars)) (recur (rest chars) chr (inc cnt))
-        :else (do
-                (flush-encoded sb cnt chr)
-                (recur (rest chars) (first chars) 1))))
+    (doseq [run (partition-by identity plain-text)]
+      (when (not= 1 (count run))
+        (.append sb (count run)))
+      (.append sb (first run)))
     (.toString sb)))
-
-(defn- flush-decoded [^StringBuilder sb cnt chr]
-  (dotimes [_ (if (zero? cnt) 1 cnt)]
-    (.append sb chr)))
-
-(defn- add-digit ^long [cnt ^Character chr]
-  (+ (* 10 cnt) (Character/digit chr 10)))
 
 (defn run-length-decode
   "decodes a run-length-encoded string"
   [cipher-text]
   (let [sb (StringBuilder.)]
-    (loop [chars (seq cipher-text)
-           cnt 0]
-      (let [^Character chr (first chars)]
-        (cond
-          (nil? chr) :default
-          (Character/isDigit chr) (recur (rest chars) (add-digit cnt chr))
-          :else (do
-                  (flush-decoded sb cnt chr)
-                  (recur (rest chars) 0)))))
+    (doseq [[_ cnt-str chr] (re-seq #"(\d+)?(\D)" cipher-text)]
+      (dotimes [_ (if (str/blank? cnt-str)
+                    1
+                    (Integer/parseInt cnt-str))]
+        (.append sb chr)))
     (.toString sb)))
