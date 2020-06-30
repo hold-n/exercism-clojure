@@ -1,23 +1,22 @@
-(ns run-length-encoding
-  (:require [clojure.string :as str]))
+(ns run-length-encoding)
+
+(defn- format-run [run]
+  (let [cnt (count run)]
+    (format "%s%s" (if (= 1 cnt) "" cnt) (first run))))
 
 (defn run-length-encode
   "encodes a string with run-length-encoding"
   [plain-text]
-  (let [sb (StringBuilder.)]
-    (doseq [run (partition-by identity plain-text)]
-      (when (not= 1 (count run))
-        (.append sb (count run)))
-      (.append sb (first run)))
-    (.toString sb)))
+  (->> plain-text
+       (partition-by identity)
+       (map format-run)
+       (apply str)))
 
 (defn run-length-decode
   "decodes a run-length-encoded string"
   [cipher-text]
-  (let [sb (StringBuilder.)]
-    (doseq [[_ cnt-str chr] (re-seq #"(\d+)?(\D)" cipher-text)]
-      (dotimes [_ (if (str/blank? cnt-str)
-                    1
-                    (Integer/parseInt cnt-str))]
-        (.append sb chr)))
-    (.toString sb)))
+  (->> cipher-text
+       (re-seq #"(\d+)?(\D)")
+       (mapcat (fn [[_ cnt-str chr]]
+                 (repeat (Integer/parseInt (or cnt-str "1")) chr)))
+       (apply str)))
