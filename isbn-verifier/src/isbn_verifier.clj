@@ -1,23 +1,29 @@
 (ns isbn-verifier)
 
-(defn- parse-num [^Character c]
-  (if (= c \X) 10 (Character/digit c 10)))
+(defn- isbn10->nums
+  "Parses a valid `isbn` and retrieves the constituent ISBN10 numbers."
+  [isbn]
+  (map
+   #(if (= % \X) 10 (Character/digit % 10))
+   (remove #{\-} isbn)))
 
-(defn- isbn10->nums [isbn]
-  (when (re-matches #"\d{9}[\dX]|\d-\d{3}-\d{5}-[\dX]" isbn)
-    (map parse-num (remove #{\-} isbn))))
-
-(defn- checksum10? [nums]
+(defn- checksum10?
+  "Checks whether the `nums` sequence generates a correct ISBN10 checksum."
+  [nums]
   (let [divisible-by? #(zero? (rem %2 %1))]
     (->> nums
          (map * (range 10 0 -1))
          (reduce +)
          (divisible-by? 11))))
 
-(defn- isbn10? [isbn]
-  (let [nums (isbn10->nums isbn)]
-    (true? (and
-            (seq nums)
-            (checksum10? nums)))))
+(defn- isbn10?
+  "Checks if `isbn` represents a correct ISBN10."
+  [isbn]
+  (and
+   (some? (re-matches #"\d{9}[\dX]|\d-\d{3}-\d{5}-[\dX]" isbn))
+   (let [nums (isbn10->nums isbn)]
+     (checksum10? nums))))
 
-(def isbn? isbn10?)
+(def isbn?
+  "Checks if `isbn` represents a correct ISBN10."
+  isbn10?)
