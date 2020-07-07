@@ -1,16 +1,18 @@
 (ns anagram
   (:require [clojure.string :as str]))
 
-(defn- anagram?
-  "Determines whether `a` and `b` are anagrams."
-  [a b]
-  (let [a (str/lower-case a)
-        b (str/lower-case b)]
-    (and
-     (not= a b)
-     (= (frequencies a) (frequencies b)))))
+(defn- anagram-of
+  "Creates a predicate that checks whether a string is an anagram of `word`."
+  [word]
+  (let [word (str/lower-case word)
+        s (sort word)]
+    #(let [word' (str/lower-case %)
+           s' (sort word')]
+       (and
+        (not= word word')
+        (= s s')))))
 
 (defn anagrams-for
-  "Returns a sublist of `prospect-list` with anagrams to `word`."
-  [word prospect-list]
-  (filter #(anagram? % word) prospect-list))
+  "Returns a sublist of `prospects` with anagrams to `word`."
+  [word prospects]
+  (filter (anagram-of word) prospects))
