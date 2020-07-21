@@ -1,79 +1,54 @@
-(ns say
-  (:require [clojure.string :as str]))
+(ns say)
 
-(defn- say-teens [n]
-  (case n
-    10 "ten"
-    11 "eleven"
-    12 "twelve"
-    13 "thirteen"
-    14 "fourteen"
-    15 "fifteen"
-    16 "sixteen"
-    17 "seventeen"
-    18 "eighteen"
-    19 "nineteen"))
+(def ^:private ^:const numbers
+  {1 "one"
+   2 "two"
+   3 "three"
+   4 "four"
+   5 "five"
+   6 "six"
+   7 "seven"
+   8 "eight"
+   9 "nine"
+   10 "ten"
+   11 "eleven"
+   12 "twelve"
+   13 "thirteen"
+   14 "fourteen"
+   15 "fifteen"
+   16 "sixteen"
+   17 "seventeen"
+   18 "eighteen"
+   19 "nineteen"
+   20 "twenty"
+   30 "thirty"
+   40 "forty"
+   50 "fifty"
+   60 "sixty"
+   70 "seventy"
+   80 "eighty"
+   90 "ninety"})
 
-(defn- say-tens [n]
-  (case (-> n (quot 10) (rem 10))
-    2 "twenty"
-    3 "thirty"
-    4 "fourty"
-    5 "fifty"
-    6 "sixty"
-    7 "seventy"
-    8 "eighty"
-    9 "ninety"
-    nil))
+(def ^:private ^:const exponents
+  [[1000000000 "billion"]
+   [1000000    "million"]
+   [1000       "thousand"]
+   [100        "hundred"]])
 
-(defn- say-digit [n]
-  (case (rem n 10)
-    1 "one"
-    2 "two"
-    3 "three"
-    4 "four"
-    5 "five"
-    6 "six"
-    7 "seven"
-    8 "eight"
-    9 "nine"
-    nil))
-
-(defn- say-chunk [num]
+(defn- number* [num]
   (cond
-    (zero? num) nil
-    (<= 10 num 19) (say-teens num)
-    (<= 1 num 99) (let [t (say-tens num) d (say-digit num)]
-                    (if (and t d)
-                      (str t "-" d)
-                      (or t d)))
-    (<= num 999) (let [h (say-digit (quot num 100))
-                       c (say-chunk (rem num 100))]
-                    (if c
-                      (str h " hundred " c)
-                      (str h " hundred")))))
-
-(def ^:private exponents
-  [nil "thousand" "million" "billion"])
-
-(defn- format-chunk [exp c]
-  (when (pos? c)
-    (if exp
-      (str (say-chunk c) " " exp)
-      (say-chunk c))))
-
-(defn- get-chunks [num]
-  (loop [num num ret []]
-    (if (zero? num)
-      ret
-      (recur (quot num 1000) (conj ret (rem num 1000))))))
+    (contains? numbers num) (numbers num)
+    (< num 100) (let [hi (number* (* 10 (quot num 10)))
+                      lo (number* (rem num 10))]
+                  (str hi "-" lo))
+    :else (let [[[exp exp-name]] (drop-while #(> (first %) num) exponents)
+                hi (number* (quot num exp))]
+            (if (pos? (rem num exp))
+              (str hi " " exp-name " " (number* (rem num exp)))
+              (str hi " " exp-name)))))
 
 (defn number [num]
   (cond
+    (not (<= 0 num 999999999999)) (throw (IllegalArgumentException.))
     (zero? num) "zero"
-    (<= 1 num 999999999999) (->> (get-chunks num)
-                                 (map format-chunk exponents)
-                                 (filter some?)
-                                 reverse
-                                 (str/join " "))
-    :else (throw (IllegalArgumentException. "Number out of range"))))
+    :else (number* num)))
